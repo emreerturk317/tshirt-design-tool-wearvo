@@ -15,14 +15,6 @@ const TIPS = [
   "Try: 'Cyberpunk cat portrait, neon pink and cyan'",
 ];
 
-const DESIGN_IMAGES = [
-  "https://picsum.photos/seed/ai1/400/400",
-  "https://picsum.photos/seed/ai2/400/400",
-  "https://picsum.photos/seed/ai3/400/400",
-  "https://picsum.photos/seed/ai4/400/400",
-  "https://picsum.photos/seed/ai5/400/400",
-  "https://picsum.photos/seed/ai6/400/400",
-];
 
 type Step = "configure" | "generating" | "preview" | "publish";
 
@@ -61,12 +53,14 @@ export default function DesignPage() {
       });
     }, 200);
 
+    const tshirtPrompt = `t-shirt graphic design, ${prompt}, transparent background, clean vector art, centered composition, no text`;
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(tshirtPrompt)}?width=512&height=512&nologo=true&seed=${Date.now()}`;
+
     await new Promise(r => setTimeout(r, 2800));
     clearInterval(interval);
     setProgress(100);
 
-    const randomImage = DESIGN_IMAGES[Math.floor(Math.random() * DESIGN_IMAGES.length)];
-    setGeneratedImage(randomImage);
+    setGeneratedImage(imageUrl);
     setTitle(prompt.split(" ").slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" "));
 
     setTimeout(() => setStep("preview"), 300);
