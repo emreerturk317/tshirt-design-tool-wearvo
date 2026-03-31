@@ -53,8 +53,8 @@ export default function DesignPage() {
       });
     }, 200);
 
-    const tshirtPrompt = `t-shirt graphic design, ${prompt}, transparent background, clean vector art, centered composition, no text`;
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(tshirtPrompt)}?width=512&height=512&nologo=true&seed=${Date.now()}`;
+    const tshirtPrompt = `t-shirt graphic print, ${prompt}, white background, high contrast, centered, bold graphic art style, no photograph, illustration`;
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(tshirtPrompt)}?model=flux&width=512&height=512&nologo=true&seed=${Date.now()}`;
 
     await new Promise(r => setTimeout(r, 2800));
     clearInterval(interval);
