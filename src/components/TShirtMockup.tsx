@@ -31,22 +31,30 @@ export default function TShirtMockup({ color, designUrl, className = "" }: Props
         {/* Sleeve lines */}
         <path d="M40 80 L80 90" stroke="rgba(0,0,0,0.08)" strokeWidth="1" />
         <path d="M220 90 L260 80" stroke="rgba(0,0,0,0.08)" strokeWidth="1" />
-        {/* Design area */}
-        {designUrl && (
-          <foreignObject x="100" y="100" width="100" height="100">
-            <img
-              src={designUrl}
-              alt="Design"
-              style={{ width: "100%", height: "100%", objectFit: "contain", mixBlendMode: "multiply" }}
-            />
-          </foreignObject>
-        )}
+
+        {/* Placeholder dashed box when no design */}
         {!designUrl && (
           <rect x="100" y="100" width="100" height="100" rx="4"
-            fill="rgba(0,0,0,0.05)" strokeDasharray="4,4"
-            stroke="rgba(0,0,0,0.15)" strokeWidth="1" />
+            fill="rgba(255,255,255,0.08)" strokeDasharray="4,4"
+            stroke="rgba(255,255,255,0.25)" strokeWidth="1" />
         )}
       </svg>
+
+      {/* Design image overlaid on chest area */}
+      {designUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={designUrl}
+          alt="Generated design"
+          className="absolute rounded-sm object-contain"
+          style={{
+            width: "33%",
+            height: "33%",
+            top: "34%",
+            left: "33.5%",
+          }}
+        />
+      )}
     </div>
   );
 }
