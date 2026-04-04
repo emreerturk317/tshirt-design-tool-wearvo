@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { TSHIRT_COLORS, Design } from "@/lib/data";
 import TShirtMockup from "@/components/TShirtMockup";
+import LoginModal from "@/components/LoginModal";
 import { Zap, RefreshCw, Globe, Lock, ShoppingCart, Wand2, Lightbulb } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -32,13 +33,15 @@ export default function DesignPage() {
   const [title, setTitle] = useState("");
   const [tip] = useState(TIPS[Math.floor(Math.random() * TIPS.length)]);
   const [published, setPublished] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [imageReady, setImageReady] = useState(false);
 
   const dailyLimit = 3;
   const usedToday = isLoggedIn ? 1 : 0;
 
   const handleGenerate = async () => {
     if (!isLoggedIn) {
-      router.push("/login");
+      setShowLoginModal(true);
       return;
     }
     if (!prompt.trim()) return;
@@ -60,10 +63,9 @@ export default function DesignPage() {
     clearInterval(interval);
     setProgress(100);
 
+    setImageReady(false);
     setGeneratedImage(imageUrl);
     setTitle(prompt.split(" ").slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" "));
-
-    setTimeout(() => setStep("preview"), 300);
   };
 
   const handlePublish = () => {
@@ -89,16 +91,27 @@ export default function DesignPage() {
     setStep("publish");
   };
 
+  const handleImageLoad = () => {
+    setImageReady(true);
+    setStep("preview");
+  };
+
   const handleReset = () => {
     setStep("configure");
     setGeneratedImage(null);
     setPrompt("");
     setProgress(0);
     setPublished(false);
+    setImageReady(false);
   };
 
   return (
     <main className="pt-16 min-h-screen bg-gray-50">
+      <LoginModal
+        open={showLoginModal}
+        onSuccess={() => { setShowLoginModal(false); handleGenerate(); }}
+        onClose={() => setShowLoginModal(false)}
+      />
       <div className="max-w-6xl mx-auto px-6 py-12">
         <div className="mb-8">
           <h1 className="text-2xl font-bold">Design Studio</h1>
@@ -261,7 +274,7 @@ export default function DesignPage() {
           <div className="sticky top-24">
             <div className="bg-white rounded-3xl p-8 border border-gray-100 aspect-square flex flex-col items-center justify-center">
               <AnimatePresence mode="wait">
-                {step === "generating" ? (
+                {(step === "generating" || (step !== "configure" && !imageReady)) ? (
                   <motion.div
                     key="loading"
                     initial={{ opacity: 0 }}
@@ -270,7 +283,8 @@ export default function DesignPage() {
                     className="text-center"
                   >
                     <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-500 rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-sm text-gray-400">AI is crafting your design...</p>
+                    <p className="text-sm text-gray-500 font-medium">Crafting your design…</p>
+                    <p className="text-xs text-gray-400 mt-1">This usually takes 5–15 seconds</p>
                   </motion.div>
                 ) : (
                   <motion.div
@@ -284,6 +298,7 @@ export default function DesignPage() {
                       color={selectedColor.hex}
                       designUrl={generatedImage || undefined}
                       className="w-full max-w-xs mx-auto"
+                      onImageLoad={handleImageLoad}
                     />
                     {!generatedImage && (
                       <p className="text-center text-xs text-gray-400 mt-4">

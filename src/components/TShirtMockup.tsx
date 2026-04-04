@@ -1,12 +1,20 @@
 "use client";
+import { useState, useEffect } from "react";
 
 interface Props {
   color: string;
   designUrl?: string;
   className?: string;
+  onImageLoad?: () => void;
 }
 
-export default function TShirtMockup({ color, designUrl, className = "" }: Props) {
+export default function TShirtMockup({ color, designUrl, className = "", onImageLoad }: Props) {
+  const [imgLoading, setImgLoading] = useState(false);
+
+  useEffect(() => {
+    if (designUrl) setImgLoading(true);
+  }, [designUrl]);
+
   return (
     <div className={`relative flex items-center justify-center ${className}`}>
       <svg
@@ -40,19 +48,32 @@ export default function TShirtMockup({ color, designUrl, className = "" }: Props
         )}
       </svg>
 
+      {/* Spinner while image is loading */}
+      {designUrl && imgLoading && (
+        <div
+          className="absolute flex items-center justify-center"
+          style={{ width: "33%", height: "33%", top: "34%", left: "33.5%" }}
+        >
+          <div className="w-7 h-7 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        </div>
+      )}
+
       {/* Design image overlaid on chest area */}
       {designUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={designUrl}
           alt="Generated design"
-          className="absolute rounded-sm object-contain"
+          className="absolute rounded-sm object-contain transition-opacity duration-300"
           style={{
             width: "33%",
             height: "33%",
             top: "34%",
             left: "33.5%",
+            opacity: imgLoading ? 0 : 1,
           }}
+          onLoad={() => { setImgLoading(false); onImageLoad?.(); }}
+          onError={() => { setImgLoading(false); onImageLoad?.(); }}
         />
       )}
     </div>
