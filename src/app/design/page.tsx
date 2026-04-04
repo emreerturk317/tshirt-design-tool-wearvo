@@ -34,7 +34,6 @@ export default function DesignPage() {
   const [tip] = useState(TIPS[Math.floor(Math.random() * TIPS.length)]);
   const [published, setPublished] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [imageReady, setImageReady] = useState(false);
 
   const dailyLimit = 3;
   const usedToday = isLoggedIn ? 1 : 0;
@@ -63,9 +62,9 @@ export default function DesignPage() {
     clearInterval(interval);
     setProgress(100);
 
-    setImageReady(false);
     setGeneratedImage(imageUrl);
     setTitle(prompt.split(" ").slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" "));
+    setStep("preview");
   };
 
   const handlePublish = () => {
@@ -91,18 +90,12 @@ export default function DesignPage() {
     setStep("publish");
   };
 
-  const handleImageLoad = () => {
-    setImageReady(true);
-    setStep("preview");
-  };
-
   const handleReset = () => {
     setStep("configure");
     setGeneratedImage(null);
     setPrompt("");
     setProgress(0);
     setPublished(false);
-    setImageReady(false);
   };
 
   return (
@@ -274,7 +267,7 @@ export default function DesignPage() {
           <div className="sticky top-24">
             <div className="bg-white rounded-3xl p-8 border border-gray-100 aspect-square flex flex-col items-center justify-center">
               <AnimatePresence mode="wait">
-                {(step === "generating" || (step !== "configure" && !imageReady)) ? (
+                {step === "generating" ? (
                   <motion.div
                     key="loading"
                     initial={{ opacity: 0 }}
@@ -298,7 +291,6 @@ export default function DesignPage() {
                       color={selectedColor.hex}
                       designUrl={generatedImage || undefined}
                       className="w-full max-w-xs mx-auto"
-                      onImageLoad={handleImageLoad}
                     />
                     {!generatedImage && (
                       <p className="text-center text-xs text-gray-400 mt-4">
