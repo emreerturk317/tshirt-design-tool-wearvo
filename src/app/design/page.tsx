@@ -15,7 +15,7 @@ const TIPS = [
   "Try: 'Cyberpunk cat portrait, neon pink and cyan'",
 ];
 
-interface ProductColor { name: string; hex: string; }
+interface ProductColor { name: string; hex: string; image?: string; }
 
 type Step = "configure" | "uploading" | "generating" | "mockup" | "preview" | "publish";
 type DesignMode = "ai" | "upload";
@@ -56,9 +56,18 @@ function DesignPageInner() {
     fetch(`/api/printful/store-products/${productId}`)
       .then(r => r.json())
       .then(data => {
-        if (data.colors?.length) {
-          setColors(data.colors);
-          const match = data.colors.find((c: ProductColor) => c.name === initColorName) ?? data.colors[0];
+        if (data.colors?.length || data.variants?.length) {
+          // Build color list with one image per color from variants
+          const variantMap = new Map<string, string>();
+          for (const v of (data.variants ?? [])) {
+            if (v.image && !variantMap.has(v.color)) variantMap.set(v.color, v.image);
+          }
+          const colorsWithImages: ProductColor[] = (data.colors ?? []).map((c: ProductColor) => ({
+            ...c,
+            image: variantMap.get(c.name),
+          }));
+          setColors(colorsWithImages);
+          const match = colorsWithImages.find((c) => c.name === initColorName) ?? colorsWithImages[0];
           setSelectedColor(match);
         }
         if (data.sizes?.length) {
@@ -163,12 +172,7 @@ function DesignPageInner() {
 
   const handleColorChange = (c: ProductColor) => {
     setSelectedColor(c);
-    if ((step === "preview" || step === "publish") && generatedImage) {
-      setMockupUrl(null);
-      setMockupError(false);
-      setStep("mockup");
-      generateMockup(generatedImage, c.name).then(() => setStep("preview"));
-    }
+    // No re-generation needed — overlay mode shows design on top of color photo instantly
   };
 
   const handlePublish = () => {
@@ -451,10 +455,25 @@ function DesignPageInner() {
                     </div>
                     <p className="text-sm text-gray-400">Your design will appear here</p>
                   </motion.div>
-                ) : mockupUrl && !mockupError ? (
-                  <motion.div key="mockup" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} className="w-full h-full flex items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={mockupUrl} alt="Product mockup" className="w-full h-full object-contain" />
+                ) : (mockupUrl && !mockupError) || (generatedImage && selectedColor.image) ? (
+                  <motion.div key="mockup" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} className="w-full h-full flex items-center justify-center relative">
+                    {mockupUrl && !mockupError ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={mockupUrl} alt="Product mockup" className="w-full h-full object-contain" />
+                    ) : (
+                      // Overlay mode: product photo + design on top
+                      <div className="relative w-full h-full flex items-center justify-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={selectedColor.image} alt="Product" className="w-full h-full object-contain" />
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={generatedImage!}
+                          alt="Design"
+                          className="absolute"
+                          style={{ width: "38%", height: "38%", objectFit: "contain", top: "22%", left: "31%" }}
+                        />
+                      </div>
+                    )}
                   </motion.div>
                 ) : (
                   <motion.div key="fallback" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
