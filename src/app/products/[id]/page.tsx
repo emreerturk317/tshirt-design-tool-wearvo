@@ -67,11 +67,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   ].filter((url, i, arr) => url && arr.indexOf(url) === i).slice(0, 8);
 
   const handleStartDesigning = () => {
-    if (!selectedColor || !selectedSize) return;
+    if (!selectedSize) return;
     const params = new URLSearchParams({
       productId: String(product.id),
-      colorName: selectedColor.name,
-      colorHex: selectedColor.hex,
+      colorName: selectedColor?.name ?? "",
+      colorHex: selectedColor?.hex ?? "#000000",
       size: selectedSize,
     });
     router.push(`/design?${params.toString()}`);
@@ -205,7 +205,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
             <button
               onClick={handleStartDesigning}
-              disabled={!selectedColor || !selectedSize}
+              disabled={!selectedSize}
               className="w-full flex items-center justify-center gap-2 bg-indigo-500 text-white py-4 rounded-2xl font-semibold hover:bg-indigo-600 transition-colors disabled:opacity-40"
             >
               <Wand2 className="w-5 h-5" />
