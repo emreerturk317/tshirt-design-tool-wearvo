@@ -9,6 +9,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
+  const host = req.headers.get("host");
+  const protocol = host?.includes("localhost") ? "http" : "https";
+  const proxyImageUrl = `${protocol}://${host}/api/image-proxy?url=${encodeURIComponent(designUrl)}`;
+
   // Unisex Staple T-Shirt (Bella + Canvas 3001) — Printful variant IDs per size
   const sizeToVariant: Record<string, number> = {
     XS: 4011,
@@ -31,7 +35,7 @@ export async function POST(req: NextRequest) {
         files: [
           {
             type: "front",
-            url: designUrl,
+            url: proxyImageUrl,
           },
         ],
       },
