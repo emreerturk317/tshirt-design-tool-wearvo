@@ -39,21 +39,33 @@ export default function DesignPage() {
   const dailyLimit = 3;
   const usedToday = isLoggedIn ? 1 : 0;
 
-  const pollMockup = async (taskKey: string) => {
+  const pollMockup = async (taskKey: string): Promise<string | null> => {
     for (let i = 0; i < 20; i++) {
       await new Promise(r => setTimeout(r, 2000));
       const res = await fetch(`/api/printful/mockup-status?taskKey=${taskKey}`);
       const data = await res.json();
-      if (data.status === "completed" && data.mockupUrl) {
-        setMockupUrl(data.mockupUrl);
-        setStep("preview");
-        return;
-      }
+      if (data.status === "completed" && data.mockupUrl) return data.mockupUrl;
       if (data.status === "failed") break;
     }
-    // Fallback: show SVG mockup if Printful fails
+    return null;
+  };
+
+  const generateMockup = async (imageUrl: string, colorName: string) => {
+    try {
+      const res = await fetch("/api/printful/mockup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ designUrl: imageUrl, colorName }),
+      });
+      const data = await res.json();
+      if (data.taskKey) {
+        const url = await pollMockup(data.taskKey);
+        if (url) { setMockupUrl(url); return; }
+      }
+    } catch (e) {
+      console.error("[Mockup error]", e);
+    }
     setMockupError(true);
-    setStep("preview");
   };
 
   const handleGenerate = async () => {
@@ -85,28 +97,8 @@ export default function DesignPage() {
     setGeneratedImage(imageUrl);
     setTitle(prompt.split(" ").slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" "));
     setStep("mockup");
-
-    // Start Printful mockup generation
-    try {
-      const res = await fetch("/api/printful/mockup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ designUrl: imageUrl, colorName: selectedColor.name }),
-      });
-      const data = await res.json();
-      console.log("[Mockup API response]", data);
-      if (data.taskKey) {
-        await pollMockup(data.taskKey);
-      } else {
-        console.error("[Mockup error]", data.error, data.raw);
-        setMockupError(true);
-        setStep("preview");
-      }
-    } catch (e) {
-      console.error("[Mockup fetch error]", e);
-      setMockupError(true);
-      setStep("preview");
-    }
+    await generateMockup(imageUrl, selectedColor.name);
+    setStep("preview");
   };
 
   const handlePublish = () => {
@@ -181,7 +173,15 @@ export default function DesignPage() {
                 {TSHIRT_COLORS.map(c => (
                   <button
                     key={c.hex}
-                    onClick={() => setSelectedColor(c)}
+                    onClick={() => {
+                      setSelectedColor(c);
+                      if ((step === "preview" || step === "publish") && generatedImage) {
+                        setMockupUrl(null);
+                        setMockupError(false);
+                        setStep("mockup");
+                        generateMockup(generatedImage, c.name).then(() => setStep("preview"));
+                      }
+                    }}
                     title={c.name}
                     className={`w-7 h-7 rounded-full transition-all ${
                       selectedColor.hex === c.hex ? "ring-2 ring-indigo-500 ring-offset-2 scale-110" : "hover:scale-105"
