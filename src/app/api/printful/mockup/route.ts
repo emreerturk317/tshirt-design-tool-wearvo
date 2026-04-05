@@ -20,9 +20,9 @@ export async function POST(req: NextRequest) {
     variants.find(v => v.size === "M") ??
     variants[0];
 
-  // Create mockup generation task
+  // Create mockup generation task — URL uses product ID (71), variant IDs go in body
   const taskRes = await fetch(
-    `https://api.printful.com/mockup-generator/create-task/${matched.id}`,
+    `https://api.printful.com/mockup-generator/create-task/71`,
     {
       method: "POST",
       headers: {
@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        variant_ids: [matched.id],
         files: [
           {
             placement: "front",
