@@ -58,21 +58,21 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     );
   }
 
-  // When color changes, switch to that color's photo
-  const colorImage = selectedColor
-    ? product.variants.find(v => v.color === selectedColor.name && v.image)?.image ?? null
-    : null;
+  // One image per color (first variant of each color)
+  const colorPhotos = Array.from(
+    product.variants.reduce((map, v) => {
+      if (v.image && !map.has(v.color)) map.set(v.color, v.image);
+      return map;
+    }, new Map<string, string>()).values()
+  );
 
-  // Collect unique photos from variants
+  // Gallery: thumbnail first, then one photo per color
   const photos = [
     product.thumbnail,
-    ...product.variants
-      .map(v => v.image)
-      .filter((img): img is string => !!img),
-  ].filter((url, i, arr) => url && arr.indexOf(url) === i).slice(0, 8);
+    ...colorPhotos,
+  ].filter((url, i, arr): url is string => !!url && arr.indexOf(url) === i).slice(0, 8);
 
-  // Main displayed image: color-matched or current gallery index
-  const mainImage = colorImage ?? photos[photoIndex];
+  const mainImage = photos[photoIndex] ?? product.thumbnail;
 
   const handleStartDesigning = () => {
     if (!selectedSize) return;
@@ -173,7 +173,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     <button
                       key={c.name}
                       title={c.name}
-                      onClick={() => { setSelectedColor(c); setPhotoIndex(0); }}
+                      onClick={() => {
+                        setSelectedColor(c);
+                        const colorImg = product.variants.find(v => v.color === c.name && v.image)?.image;
+                        if (colorImg) {
+                          const idx = photos.indexOf(colorImg);
+                          setPhotoIndex(idx >= 0 ? idx : 0);
+                        }
+                      }}
                       className={`w-8 h-8 rounded-full transition-all ${
                         selectedColor?.name === c.name
                           ? "ring-2 ring-indigo-500 ring-offset-2 scale-110"
