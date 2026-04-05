@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { TSHIRT_COLORS, Design } from "@/lib/data";
-import TShirtMockup from "@/components/TShirtMockup";
 import LoginModal from "@/components/LoginModal";
 import { Zap, RefreshCw, Globe, Lock, ShoppingCart, Wand2, Lightbulb, Shirt } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -338,6 +337,19 @@ export default function DesignPage() {
                       {step === "generating" ? "AI is drawing your idea" : "Placing design on real product photo"}
                     </p>
                   </motion.div>
+                ) : step === "configure" ? (
+                  <motion.div
+                    key="empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-center"
+                  >
+                    <div className="w-24 h-24 rounded-full bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center mx-auto mb-4">
+                      <Wand2 className="w-8 h-8 text-gray-300" />
+                    </div>
+                    <p className="text-sm text-gray-400">Describe your design and hit Generate</p>
+                  </motion.div>
                 ) : mockupUrl && !mockupError ? (
                   <motion.div
                     key="printful-mockup"
@@ -355,22 +367,14 @@ export default function DesignPage() {
                   </motion.div>
                 ) : (
                   <motion.div
-                    key="svg-mockup"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4 }}
-                    className="w-full"
+                    key="loading-fallback"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-center"
                   >
-                    <TShirtMockup
-                      color={selectedColor.hex}
-                      designUrl={generatedImage || undefined}
-                      className="w-full max-w-xs mx-auto"
-                    />
-                    {!generatedImage && (
-                      <p className="text-center text-xs text-gray-400 mt-4">
-                        Your design will appear here
-                      </p>
-                    )}
+                    <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-500 rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-sm text-gray-500 font-medium">Generating product mockup…</p>
                   </motion.div>
                 )}
               </AnimatePresence>
