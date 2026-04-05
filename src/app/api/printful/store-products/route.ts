@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   const res = await fetch("https://api.printful.com/store/products?limit=100", {
-    headers: { Authorization: `Bearer ${process.env.PRINTFUL_API_KEY}` },
+    headers: {
+      Authorization: `Bearer ${process.env.PRINTFUL_API_KEY}`,
+      "X-PF-Store-Id": process.env.PRINTFUL_STORE_ID ?? "",
+    },
     next: { revalidate: 3600 },
   });
 
