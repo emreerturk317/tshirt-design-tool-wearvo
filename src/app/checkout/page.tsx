@@ -10,8 +10,11 @@ function CheckoutForm() {
   const router = useRouter();
   const designUrl = params.get("designUrl") ?? "";
   const color = params.get("color") ?? "#000000";
+  const colorName = params.get("colorName") ?? "";
+  const productId = params.get("productId") ?? "";
+  const initSize = params.get("size") ?? "M";
 
-  const [size, setSize] = useState("M");
+  const [size, setSize] = useState(initSize);
   const [form, setForm] = useState({
     name: "",
     address1: "",
@@ -41,6 +44,8 @@ function CheckoutForm() {
           designUrl,
           size,
           color,
+          colorName,
+          ...(productId ? { productId } : {}),
           recipient: {
             name: form.name,
             address1: form.address1,

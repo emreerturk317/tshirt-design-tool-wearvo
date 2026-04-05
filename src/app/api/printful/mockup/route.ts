@@ -1,28 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 
+async function getCatalogProductId(storeProductId: string): Promise<number> {
+  const res = await fetch(`https://api.printful.com/store/products/${storeProductId}`, {
+    headers: { Authorization: `Bearer ${process.env.PRINTFUL_API_KEY}` },
+  });
+  const data = await res.json();
+  // sync_variants[0].product.product_id is the catalog product ID
+  return data.result?.sync_variants?.[0]?.product?.product_id ?? 71;
+}
+
 export async function POST(req: NextRequest) {
-  const { designUrl, colorName } = await req.json();
+  const { designUrl, colorName, productId } = await req.json();
 
   const host = req.headers.get("host");
   const protocol = host?.includes("localhost") ? "http" : "https";
   const proxyImageUrl = `${protocol}://${host}/api/image-proxy?url=${encodeURIComponent(designUrl)}`;
 
-  // Fetch Bella+Canvas 3001 variants (catalog product ID: 71)
-  const productRes = await fetch("https://api.printful.com/products/71", {
+  // Determine which catalog product to use for mockup generation
+  let catalogProductId = 71; // default: Bella+Canvas 3001
+  if (productId) {
+    catalogProductId = await getCatalogProductId(productId);
+  }
+
+  // Fetch catalog product variants to find the right one by color
+  const productRes = await fetch(`https://api.printful.com/products/${catalogProductId}`, {
     headers: { Authorization: `Bearer ${process.env.PRINTFUL_API_KEY}` },
   });
   const productData = await productRes.json();
   const variants: { id: number; size: string; color: string }[] = productData.result.variants;
 
-  // Find M size variant matching the color name (fallback to first M)
+  // Find M size variant matching the color name (fallback to first M, then first)
   const matched =
     variants.find(v => v.size === "M" && v.color.toLowerCase() === colorName.toLowerCase()) ??
     variants.find(v => v.size === "M") ??
     variants[0];
 
-  // Create mockup generation task — URL uses product ID (71), variant IDs go in body
   const taskRes = await fetch(
-    `https://api.printful.com/mockup-generator/create-task/71`,
+    `https://api.printful.com/mockup-generator/create-task/${catalogProductId}`,
     {
       method: "POST",
       headers: {

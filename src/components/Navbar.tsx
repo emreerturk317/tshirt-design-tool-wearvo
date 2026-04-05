@@ -17,6 +17,9 @@ export default function Navbar() {
           <Link href="/explore" className="text-sm text-gray-600 hover:text-black transition-colors">
             Explore
           </Link>
+          <Link href="/products" className="text-sm text-gray-600 hover:text-black transition-colors">
+            Products
+          </Link>
           {isLoggedIn && (
             <Link href="/design" className="text-sm text-gray-600 hover:text-black transition-colors">
               Design
