@@ -172,8 +172,10 @@ function DesignPageInner() {
 
   const handleColorChange = (c: ProductColor) => {
     setSelectedColor(c);
-    // Clear mockup so overlay mode kicks in instantly with the new color's photo
-    if (generatedImage) setMockupUrl(null);
+    // Regenerate mockup in background; keep old mockup visible until new one is ready
+    if (generatedImage) {
+      generateMockup(generatedImage, c.name);
+    }
   };
 
   const handlePublish = () => {
@@ -456,25 +458,10 @@ function DesignPageInner() {
                     </div>
                     <p className="text-sm text-gray-400">Your design will appear here</p>
                   </motion.div>
-                ) : (mockupUrl && !mockupError) || (generatedImage && selectedColor.image) ? (
-                  <motion.div key="mockup" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} className="w-full h-full flex items-center justify-center relative">
-                    {mockupUrl && !mockupError ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={mockupUrl} alt="Product mockup" className="w-full h-full object-contain" />
-                    ) : (
-                      // Overlay mode: product photo + design on top
-                      <div className="relative w-full h-full flex items-center justify-center">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={selectedColor.image} alt="Product" className="w-full h-full object-contain" />
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={generatedImage!}
-                          alt="Design"
-                          className="absolute"
-                          style={{ width: "38%", height: "38%", objectFit: "contain", top: "22%", left: "31%" }}
-                        />
-                      </div>
-                    )}
+                ) : mockupUrl && !mockupError ? (
+                  <motion.div key="mockup" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} className="w-full h-full flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={mockupUrl} alt="Product mockup" className="w-full h-full object-contain" />
                   </motion.div>
                 ) : (
                   <motion.div key="fallback" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
