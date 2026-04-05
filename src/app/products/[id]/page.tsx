@@ -58,6 +58,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     );
   }
 
+  // When color changes, switch to that color's photo
+  const colorImage = selectedColor
+    ? product.variants.find(v => v.color === selectedColor.name && v.image)?.image ?? null
+    : null;
+
   // Collect unique photos from variants
   const photos = [
     product.thumbnail,
@@ -65,6 +70,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       .map(v => v.image)
       .filter((img): img is string => !!img),
   ].filter((url, i, arr) => url && arr.indexOf(url) === i).slice(0, 8);
+
+  // Main displayed image: color-matched or current gallery index
+  const mainImage = colorImage ?? photos[photoIndex];
 
   const handleStartDesigning = () => {
     if (!selectedSize) return;
@@ -91,10 +99,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           {/* Photo Gallery */}
           <div className="space-y-3">
             <div className="aspect-square rounded-2xl overflow-hidden bg-gray-50 relative">
-              {photos.length > 0 ? (
+              {mainImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={photos[photoIndex]}
+                  src={mainImage}
                   alt={product.name}
                   className="w-full h-full object-contain"
                 />
@@ -165,7 +173,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     <button
                       key={c.name}
                       title={c.name}
-                      onClick={() => setSelectedColor(c)}
+                      onClick={() => { setSelectedColor(c); setPhotoIndex(0); }}
                       className={`w-8 h-8 rounded-full transition-all ${
                         selectedColor?.name === c.name
                           ? "ring-2 ring-indigo-500 ring-offset-2 scale-110"
