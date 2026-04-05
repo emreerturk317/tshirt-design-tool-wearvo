@@ -53,9 +53,13 @@ export async function POST(req: NextRequest) {
 
   if (!taskRes.ok) {
     return NextResponse.json(
-      { error: taskData.error?.message ?? "Failed to create mockup task" },
+      { error: taskData.error?.message ?? "Failed to create mockup task", raw: taskData },
       { status: taskRes.status }
     );
+  }
+
+  if (!taskData.result?.task_key) {
+    return NextResponse.json({ error: "No task_key in response", raw: taskData }, { status: 500 });
   }
 
   return NextResponse.json({ taskKey: taskData.result.task_key });

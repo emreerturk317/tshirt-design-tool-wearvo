@@ -94,13 +94,16 @@ export default function DesignPage() {
         body: JSON.stringify({ designUrl: imageUrl, colorName: selectedColor.name }),
       });
       const data = await res.json();
+      console.log("[Mockup API response]", data);
       if (data.taskKey) {
         await pollMockup(data.taskKey);
       } else {
+        console.error("[Mockup error]", data.error, data.raw);
         setMockupError(true);
         setStep("preview");
       }
-    } catch {
+    } catch (e) {
+      console.error("[Mockup fetch error]", e);
       setMockupError(true);
       setStep("preview");
     }
