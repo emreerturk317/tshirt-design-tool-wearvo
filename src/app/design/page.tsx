@@ -4,7 +4,7 @@ import { useApp } from "@/context/AppContext";
 import { TSHIRT_COLORS, Design } from "@/lib/data";
 import TShirtMockup from "@/components/TShirtMockup";
 import LoginModal from "@/components/LoginModal";
-import { Zap, RefreshCw, Globe, Lock, ShoppingCart, Wand2, Lightbulb } from "lucide-react";
+import { Zap, RefreshCw, Globe, Lock, ShoppingCart, Wand2, Lightbulb, Shirt } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -16,11 +16,10 @@ const TIPS = [
   "Try: 'Cyberpunk cat portrait, neon pink and cyan'",
 ];
 
-
-type Step = "configure" | "generating" | "preview" | "publish";
+type Step = "configure" | "generating" | "mockup" | "preview" | "publish";
 
 export default function DesignPage() {
-  const { isLoggedIn, addDesign, myDesigns } = useApp();
+  const { isLoggedIn, addDesign } = useApp();
   const router = useRouter();
 
   const [step, setStep] = useState<Step>("configure");
@@ -28,15 +27,34 @@ export default function DesignPage() {
   const [selectedType, setSelectedType] = useState<"Unisex" | "Women" | "Kids">("Unisex");
   const [prompt, setPrompt] = useState("");
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [mockupUrl, setMockupUrl] = useState<string | null>(null);
   const [isPublic, setIsPublic] = useState(true);
   const [progress, setProgress] = useState(0);
   const [title, setTitle] = useState("");
   const [tip] = useState(TIPS[Math.floor(Math.random() * TIPS.length)]);
   const [published, setPublished] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [mockupError, setMockupError] = useState(false);
 
   const dailyLimit = 3;
   const usedToday = isLoggedIn ? 1 : 0;
+
+  const pollMockup = async (taskKey: string) => {
+    for (let i = 0; i < 20; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      const res = await fetch(`/api/printful/mockup-status?taskKey=${taskKey}`);
+      const data = await res.json();
+      if (data.status === "completed" && data.mockupUrl) {
+        setMockupUrl(data.mockupUrl);
+        setStep("preview");
+        return;
+      }
+      if (data.status === "failed") break;
+    }
+    // Fallback: show SVG mockup if Printful fails
+    setMockupError(true);
+    setStep("preview");
+  };
 
   const handleGenerate = async () => {
     if (!isLoggedIn) {
@@ -47,6 +65,8 @@ export default function DesignPage() {
 
     setStep("generating");
     setProgress(0);
+    setMockupUrl(null);
+    setMockupError(false);
 
     const interval = setInterval(() => {
       setProgress(prev => {
@@ -64,17 +84,35 @@ export default function DesignPage() {
 
     setGeneratedImage(imageUrl);
     setTitle(prompt.split(" ").slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" "));
-    setStep("preview");
+    setStep("mockup");
+
+    // Start Printful mockup generation
+    try {
+      const res = await fetch("/api/printful/mockup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ designUrl: imageUrl, colorName: selectedColor.name }),
+      });
+      const data = await res.json();
+      if (data.taskKey) {
+        await pollMockup(data.taskKey);
+      } else {
+        setMockupError(true);
+        setStep("preview");
+      }
+    } catch {
+      setMockupError(true);
+      setStep("preview");
+    }
   };
 
   const handlePublish = () => {
     if (!generatedImage) return;
-
     const newDesign: Design = {
       id: `user-${Date.now()}`,
       title: title || "My Design",
       prompt,
-      imageUrl: generatedImage,
+      imageUrl: mockupUrl ?? generatedImage,
       color: selectedColor.hex,
       creator: "you",
       creatorAvatar: "https://api.dicebear.com/7.x/initials/svg?seed=you",
@@ -84,7 +122,6 @@ export default function DesignPage() {
       country: "TR",
       createdAt: new Date().toISOString(),
     };
-
     addDesign(newDesign);
     setPublished(true);
     setStep("publish");
@@ -93,9 +130,11 @@ export default function DesignPage() {
   const handleReset = () => {
     setStep("configure");
     setGeneratedImage(null);
+    setMockupUrl(null);
     setPrompt("");
     setProgress(0);
     setPublished(false);
+    setMockupError(false);
   };
 
   return (
@@ -134,7 +173,6 @@ export default function DesignPage() {
                   </button>
                 ))}
               </div>
-
               <p className="text-xs text-gray-500 mb-3 font-medium">Color</p>
               <div className="flex flex-wrap gap-2">
                 {TSHIRT_COLORS.map(c => (
@@ -182,12 +220,12 @@ export default function DesignPage() {
               </button>
             )}
 
-            {/* Generating */}
+            {/* Generating — AI phase */}
             {step === "generating" && (
               <div className="bg-white rounded-2xl p-6 border border-gray-100">
                 <div className="flex items-center gap-2 mb-3">
                   <Zap className="w-4 h-4 text-indigo-500 animate-pulse" />
-                  <span className="text-sm font-medium">Creating your design...</span>
+                  <span className="text-sm font-medium">Creating your design…</span>
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                   <motion.div
@@ -200,11 +238,28 @@ export default function DesignPage() {
               </div>
             )}
 
+            {/* Mockup — Printful phase */}
+            {step === "mockup" && (
+              <div className="bg-white rounded-2xl p-6 border border-gray-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <Shirt className="w-4 h-4 text-indigo-500 animate-pulse" />
+                  <span className="text-sm font-medium">Generating product mockup…</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-indigo-400 rounded-full"
+                    animate={{ width: ["20%", "80%", "60%", "90%"] }}
+                    transition={{ duration: 12, ease: "easeInOut" }}
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-2">Placing your design on a real product photo…</p>
+              </div>
+            )}
+
             {/* Preview controls */}
             {(step === "preview" || step === "publish") && (
               <div className="bg-white rounded-2xl p-6 border border-gray-100 space-y-4">
                 <h2 className="text-sm font-semibold text-gray-700">3 — Publish Settings</h2>
-
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1.5">Title</label>
                   <input
@@ -214,7 +269,6 @@ export default function DesignPage() {
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-indigo-300"
                   />
                 </div>
-
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-2">Visibility</label>
                   <div className="flex gap-2">
@@ -236,7 +290,6 @@ export default function DesignPage() {
                     </button>
                   </div>
                 </div>
-
                 {step === "preview" && !published && (
                   <div className="flex gap-2 pt-2">
                     <button
@@ -253,7 +306,6 @@ export default function DesignPage() {
                     </button>
                   </div>
                 )}
-
                 {published && (
                   <div className="bg-green-50 text-green-700 rounded-xl px-4 py-3 text-sm text-center font-medium">
                     🎉 Design published! Start earning when someone buys it.
@@ -265,9 +317,9 @@ export default function DesignPage() {
 
           {/* Right — Preview */}
           <div className="sticky top-24">
-            <div className="bg-white rounded-3xl p-8 border border-gray-100 aspect-square flex flex-col items-center justify-center">
+            <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden aspect-square flex flex-col items-center justify-center p-8">
               <AnimatePresence mode="wait">
-                {step === "generating" ? (
+                {(step === "generating" || step === "mockup") ? (
                   <motion.div
                     key="loading"
                     initial={{ opacity: 0 }}
@@ -276,12 +328,31 @@ export default function DesignPage() {
                     className="text-center"
                   >
                     <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-500 rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-sm text-gray-500 font-medium">Crafting your design…</p>
-                    <p className="text-xs text-gray-400 mt-1">This usually takes 5–15 seconds</p>
+                    <p className="text-sm text-gray-500 font-medium">
+                      {step === "generating" ? "Crafting your design…" : "Generating product mockup…"}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {step === "generating" ? "AI is drawing your idea" : "Placing design on real product photo"}
+                    </p>
+                  </motion.div>
+                ) : mockupUrl && !mockupError ? (
+                  <motion.div
+                    key="printful-mockup"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4 }}
+                    className="w-full h-full flex items-center justify-center"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={mockupUrl}
+                      alt="Product mockup"
+                      className="w-full h-full object-contain"
+                    />
                   </motion.div>
                 ) : (
                   <motion.div
-                    key="mockup"
+                    key="svg-mockup"
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.4 }}
@@ -301,12 +372,10 @@ export default function DesignPage() {
                 )}
               </AnimatePresence>
 
-              {generatedImage && (
-                <div className="mt-4 text-center">
-                  <p className="text-xs text-gray-400">
-                    {selectedColor.name} · {selectedType}
-                  </p>
-                </div>
+              {(step === "preview" || step === "publish") && (
+                <p className="text-xs text-gray-400 mt-3">
+                  {selectedColor.name} · {selectedType}
+                </p>
               )}
             </div>
 
