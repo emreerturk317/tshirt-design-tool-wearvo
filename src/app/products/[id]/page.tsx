@@ -16,7 +16,8 @@ interface ProductDetail {
   id: number;
   name: string;
   thumbnail: string;
-  colors: { name: string; hex: string }[];
+  gallery: string[];
+  colors: { name: string; hex: string; image?: string | null }[];
   sizes: string[];
   variants: ProductVariant[];
 }
@@ -58,19 +59,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     );
   }
 
-  // One image per color (first variant of each color)
-  const colorPhotos = Array.from(
-    product.variants.reduce((map, v) => {
-      if (v.image && !map.has(v.color)) map.set(v.color, v.image);
-      return map;
-    }, new Map<string, string>()).values()
-  );
-
-  // Gallery: thumbnail first, then one photo per color
-  const photos = [
-    product.thumbnail,
-    ...colorPhotos,
-  ].filter((url, i, arr): url is string => !!url && arr.indexOf(url) === i).slice(0, 8);
+  // Use gallery from API (all Printful preview photos)
+  const photos = product.gallery?.length
+    ? product.gallery
+    : [product.thumbnail].filter(Boolean);
 
   const mainImage = photos[photoIndex] ?? product.thumbnail;
 
@@ -175,9 +167,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                       title={c.name}
                       onClick={() => {
                         setSelectedColor(c);
-                        const colorImg = product.variants.find(v => v.color === c.name && v.image)?.image;
-                        if (colorImg) {
-                          const idx = photos.indexOf(colorImg);
+                        if (c.image) {
+                          const idx = photos.indexOf(c.image);
                           setPhotoIndex(idx >= 0 ? idx : 0);
                         }
                       }}
