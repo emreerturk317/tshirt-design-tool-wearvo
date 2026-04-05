@@ -6,7 +6,7 @@ export async function GET() {
       Authorization: `Bearer ${process.env.PRINTFUL_API_KEY}`,
       "X-PF-Store-Id": process.env.PRINTFUL_STORE_ID ?? "",
     },
-    next: { revalidate: 3600 },
+    cache: "no-store",
   });
 
   const data = await res.json();
