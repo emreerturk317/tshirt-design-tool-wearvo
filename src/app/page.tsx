@@ -31,7 +31,7 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/design"
+              href="/products"
               className="bg-indigo-500 text-white px-8 py-3.5 rounded-full font-medium hover:bg-indigo-600 transition-colors flex items-center gap-2 justify-center"
             >
               Start Designing <ArrowRight className="w-4 h-4" />
