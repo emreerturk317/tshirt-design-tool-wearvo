@@ -8,7 +8,7 @@ import SaleNotification from "@/components/SaleNotification";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Wearvo — Designed by you. Worn by the world.",
+  title: "Pandacasso — Designed by you. Worn by the world.",
   description: "Create AI-powered t-shirt designs and earn passive income every time someone buys your art.",
 };
 

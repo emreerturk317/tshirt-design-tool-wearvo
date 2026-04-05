@@ -21,7 +21,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold">Welcome back</h1>
-          <p className="text-gray-400 text-sm mt-1">Sign in to your Wearvo account</p>
+          <p className="text-gray-400 text-sm mt-1">Sign in to your Pandacasso account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
