@@ -313,8 +313,12 @@ export default function DesignPage() {
             {(step === "preview" || step === "publish") && (
               <button
                 onClick={() => {
-                  const d = myDesigns[0];
-                  if (d) router.push(`/product/${d.id}`);
+                  if (!generatedImage) return;
+                  const params = new URLSearchParams({
+                    designUrl: generatedImage,
+                    color: selectedColor.hex,
+                  });
+                  router.push(`/checkout?${params.toString()}`);
                 }}
                 className="w-full mt-4 flex items-center justify-center gap-2 bg-black text-white py-3.5 rounded-2xl font-medium hover:bg-gray-800 transition-colors"
               >
