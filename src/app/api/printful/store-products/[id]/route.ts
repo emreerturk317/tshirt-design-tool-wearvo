@@ -20,9 +20,21 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const colorMap = new Map<string, { name: string; hex: string }>();
   const sizeSet = new Set<string>();
 
+  const COLOR_HEX: Record<string, string> = {
+    "Black": "#1a1a1a", "White": "#ffffff", "Navy": "#1f2d5a",
+    "Pink": "#f4a7b9", "Red": "#cc0000", "Blue": "#1a4fa0",
+    "Green": "#2d6a2d", "Gray": "#808080", "Grey": "#808080",
+    "Athletic Heather": "#c8c8c8", "Dark Grey Heather": "#555555",
+    "Heather Red": "#c0504d", "Heather Mauve": "#b07080",
+    "Heather Blue Lagoon": "#4a90a4", "Heather Stone": "#b0a898",
+    "Leaf": "#5a7a4a", "Purple": "#6a0dad", "Yellow": "#f5c518",
+    "Orange": "#f97316", "Brown": "#7c4a03",
+  };
+
   for (const v of sync_variants) {
-    if (v.color && v.color_code && !colorMap.has(v.color)) {
-      colorMap.set(v.color, { name: v.color, hex: v.color_code });
+    if (v.color && !colorMap.has(v.color)) {
+      const hex = v.color_code ?? COLOR_HEX[v.color] ?? "#888888";
+      colorMap.set(v.color, { name: v.color, hex });
     }
     if (v.size) sizeSet.add(v.size);
   }
