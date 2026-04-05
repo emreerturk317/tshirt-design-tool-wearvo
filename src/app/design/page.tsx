@@ -172,7 +172,8 @@ function DesignPageInner() {
 
   const handleColorChange = (c: ProductColor) => {
     setSelectedColor(c);
-    // No re-generation needed — overlay mode shows design on top of color photo instantly
+    // Clear mockup so overlay mode kicks in instantly with the new color's photo
+    if (generatedImage) setMockupUrl(null);
   };
 
   const handlePublish = () => {
